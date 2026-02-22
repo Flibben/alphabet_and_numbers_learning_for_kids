@@ -19,16 +19,18 @@
             line-height: 1;
         }
 
-        /* Control progress entirely via JS for smooth pausing */
+        /* Control progress entirely via JS for smooth pausing and seeking */
         .progress-bar {
             width: 0%;
             height: 100%;
             background-color: #3b82f6;
         }
 
+        /* Styling for the segmented control inside settings */
         .active-mode {
             background-color: #3b82f6;
             color: white;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
         }
 
         #start-overlay {
@@ -44,56 +46,121 @@
         }
     </style>
 </head>
-<body class="bg-slate-50 h-screen flex flex-col items-center justify-between p-8 select-none">
+<body class="bg-slate-50 h-screen flex flex-col items-center justify-between p-4 sm:p-8 select-none relative">
 
     <!-- Start screen -->
     <div id="start-overlay">
-        <h1 class="text-4xl font-bold mb-8 text-center px-4">Redo att träna bokstäver?</h1>
+        <h1 class="text-4xl font-bold mb-8 text-center px-4">Redo att träna?</h1>
         <button id="start-btn" class="bg-white text-blue-600 px-12 py-6 rounded-full text-3xl font-black shadow-2xl hover:scale-110 transition-transform active:scale-95">
             STARTA
         </button>
     </div>
 
-    <!-- Top menu -->
-    <div class="w-full max-w-3xl flex flex-col sm:flex-row gap-4 z-10 items-center">
-        <!-- Alphabet / Numbers Toggle -->
-        <div class="flex w-full sm:w-2/3 gap-4">
-            <button id="mode-letters" class="flex-1 py-4 rounded-2xl text-xl font-bold border-4 border-blue-500 active-mode shadow-lg transition-all">
-                ABC
-            </button>
-            <button id="mode-numbers" class="flex-1 py-4 rounded-2xl text-xl font-bold border-4 border-blue-500 text-blue-500 bg-white shadow-lg transition-all">
-                123
-            </button>
-        </div>
-        
-        <!-- Language Selector -->
-        <select id="app-language" class="w-full sm:w-1/3 py-4 px-4 rounded-2xl text-xl font-bold border-4 border-slate-200 bg-white text-slate-700 outline-none cursor-pointer shadow-lg hover:border-blue-300 transition-colors">
-            <option value="sv">Svenska</option>
-            <option value="en">English</option>
-            <option value="es">Español</option>
-            <option value="de">Deutsch</option>
-            <option value="fr">Français</option>
-            <option value="it">Italiano</option>
-            <option value="pt">Português</option>
-            <option value="nl">Nederlands</option>
-            <option value="pl">Polski</option>
-            <option value="da">Dansk</option>
-            <option value="no">Norsk</option>
-            <option value="fi">Suomi</option>
-        </select>
+    <!-- Current Language Flag (Top Left) -->
+    <div id="current-flag" class="absolute top-6 left-6 text-3xl sm:text-4xl drop-shadow-md z-20 pointer-events-none transition-transform duration-300" title="Valt språk">
+        🇸🇪
     </div>
 
-    <!-- Main area for letter/number -->
-    <div id="main-display" class="flex-1 flex items-center justify-center w-full cursor-pointer group">
-        <div id="char-element" class="letter-display text-blue-600 drop-shadow-2xl transform group-active:scale-95 transition-transform text-center">
+    <!-- Settings Button (Top Right) -->
+    <button id="settings-btn" class="absolute top-6 right-6 p-3 bg-white text-slate-400 hover:text-blue-500 rounded-full shadow-lg z-20 transition-colors active:scale-95">
+        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" viewBox="0 0 256 256"><path d="M128,80a48,48,0,1,0,48,48A48.05,48.05,0,0,0,128,80Zm0,80a32,32,0,1,1,32-32A32,32,0,0,1,128,160Zm88-29.84q.06-2.16,0-4.32l14.92-18.64a8,8,0,0,0,1.48-7.06,107.21,107.21,0,0,0-10.88-26.25,8,8,0,0,0-6-3.93l-23.72-2.64q-1.48-1.56-3-3L186,44.42a8,8,0,0,0-3.94-6,107.71,107.71,0,0,0-26.25-10.87,8,8,0,0,0-7.06,1.49L130.16,44q-2.16-.06-4.32,0L107.2,29.08a8,8,0,0,0-7.06-1.48A107.6,107.6,0,0,0,73.89,38.48a8,8,0,0,0-3.93,6L67.32,68.2q-1.56,1.49-3,3L44.42,70a8,8,0,0,0-6,3.94,107.71,107.71,0,0,0-10.87,26.25,8,8,0,0,0,1.49,7.06L44,125.84q-.06,2.16,0,4.32l-14.92,18.64a8,8,0,0,0-1.48,7.06,107.21,107.21,0,0,0,10.88,26.25,8,8,0,0,0,6,3.93l23.72,2.64q1.49,1.56,3,3L69.96,211.6a8,8,0,0,0,3.94,6,107.71,107.71,0,0,0,26.25,10.87,8,8,0,0,0,7.06-1.49L125.84,212q2.16.06,4.32,0l18.64,14.92a8,8,0,0,0,7.06,1.48,107.21,107.21,0,0,0,26.25-10.88,8,8,0,0,0,3.93-6l2.64-23.72q1.56-1.48,3-3L211.6,186a8,8,0,0,0,6-3.94,107.71,107.71,0,0,0,10.87-26.25,8,8,0,0,0-1.49-7.06ZM128,176a48,48,0,1,1,48-48A48.05,48.05,0,0,1,128,176Z"></path></svg>
+    </button>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="hidden fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 opacity-0 transition-opacity duration-300">
+        <div id="settings-content" class="bg-white rounded-3xl shadow-2xl p-6 sm:p-8 w-full max-w-sm flex flex-col gap-6 transform scale-95 transition-transform duration-300">
+            
+            <div class="flex justify-between items-center mb-2">
+                <h2 class="text-2xl font-bold text-slate-800">Inställningar</h2>
+                <button id="close-settings-btn" class="p-2 text-slate-400 hover:text-slate-700 bg-slate-100 rounded-full transition-colors active:scale-90">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 256 256"><path d="M205.66,194.34a8,8,0,0,1-11.32,11.32L128,139.31,61.66,205.66a8,8,0,0,1-11.32-11.32L116.69,128,50.34,61.66a8,8,0,0,1,11.32-11.32L128,116.69l66.34-66.35a8,8,0,0,1,11.32,11.32L139.31,128Z"></path></svg>
+                </button>
+            </div>
+            
+            <!-- Alphabet / Numbers Toggle -->
+            <div class="flex bg-slate-100 p-1 rounded-2xl">
+                <button id="mode-letters" class="flex-1 py-3 rounded-xl text-lg font-bold active-mode transition-all">
+                    ABC
+                </button>
+                <button id="mode-numbers" class="flex-1 py-3 rounded-xl text-lg font-bold text-slate-500 hover:text-slate-700 transition-all">
+                    123
+                </button>
+            </div>
+            
+            <!-- Language Selector -->
+            <div>
+                <label class="block text-sm font-bold text-slate-500 mb-2 ml-1">Språk</label>
+                <select id="app-language" class="w-full py-3 px-4 rounded-xl text-lg font-bold border-2 border-slate-200 bg-white text-slate-700 outline-none cursor-pointer focus:border-blue-400 transition-colors">
+                    <option value="sv">🇸🇪 Svenska</option>
+                    <option value="en">🇬🇧 English</option>
+                    <option value="es">🇪🇸 Español</option>
+                    <option value="de">🇩🇪 Deutsch</option>
+                    <option value="fr">🇫🇷 Français</option>
+                    <option value="it">🇮🇹 Italiano</option>
+                    <option value="pt">🇵🇹 Português</option>
+                    <option value="nl">🇳🇱 Nederlands</option>
+                    <option value="pl">🇵🇱 Polski</option>
+                    <option value="da">🇩🇰 Dansk</option>
+                    <option value="no">🇳🇴 Norsk</option>
+                    <option value="fi">🇫🇮 Suomi</option>
+                </select>
+            </div>
+
+            <!-- Duration Selector -->
+            <div>
+                <label class="block text-sm font-bold text-slate-500 mb-2 ml-1">Visningstid</label>
+                <select id="duration-select" class="w-full py-3 px-4 rounded-xl text-lg font-bold border-2 border-slate-200 bg-white text-slate-700 outline-none cursor-pointer focus:border-blue-400 transition-colors">
+                    <option value="9">9 sek</option>
+                    <option value="10">10 sek</option>
+                    <option value="11">11 sek</option>
+                    <option value="12">12 sek</option>
+                    <option value="13">13 sek</option>
+                    <option value="14">14 sek</option>
+                    <option value="15" selected>15 sek</option>
+                    <option value="16">16 sek</option>
+                    <option value="17">17 sek</option>
+                    <option value="18">18 sek</option>
+                    <option value="19">19 sek</option>
+                    <option value="20">20 sek</option>
+                </select>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Empty Spacer for Top (to push content down evenly) -->
+    <div class="h-12 w-full"></div>
+
+    <!-- Main area for letter/number with navigation buttons -->
+    <div class="flex-1 flex w-full max-w-5xl items-center justify-between px-2 sm:px-8">
+        
+        <!-- Previous Button -->
+        <button id="prev-btn" class="p-4 sm:p-6 bg-white border-4 border-slate-100 hover:border-blue-200 rounded-full shadow-xl transition-all active:scale-90 text-blue-500 flex-shrink-0 z-10">
+            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="currentColor" viewBox="0 0 256 256"><path d="M165.66,202.34a8,8,0,0,1-11.32,11.32l-80-80a8,8,0,0,1,0-11.32l80-80a8,8,0,0,1,11.32,11.32L91.31,128Z"></path></svg>
+        </button>
+
+        <!-- Character Display -->
+        <div id="char-element" class="letter-display text-blue-600 drop-shadow-2xl text-center w-full">
             A
         </div>
+
+        <!-- Next Button -->
+        <button id="next-btn" class="p-4 sm:p-6 bg-white border-4 border-slate-100 hover:border-blue-200 rounded-full shadow-xl transition-all active:scale-90 text-blue-500 flex-shrink-0 z-10">
+            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="currentColor" viewBox="0 0 256 256"><path d="M181.66,133.66l-80,80a8,8,0,0,1-11.32-11.32L164.69,128,90.34,53.66a8,8,0,0,1,11.32-11.32l80,80A8,8,0,0,1,181.66,133.66Z"></path></svg>
+        </button>
+
     </div>
 
     <!-- Bottom controls and status -->
-    <div class="w-full max-w-2xl space-y-6">
-        <div class="w-full bg-blue-100 h-4 rounded-full overflow-hidden">
-            <div id="timer-bar" class="progress-bar"></div>
+    <div class="w-full max-w-3xl space-y-6 pb-4">
+        <!-- Progress Container (Now clickable for seeking) -->
+        <div id="progress-container" class="w-full bg-blue-100 h-8 sm:h-6 rounded-full overflow-hidden relative cursor-pointer shadow-inner hover:bg-blue-200 transition-colors group">
+            <!-- Progress Bar -->
+            <div id="timer-bar" class="progress-bar absolute left-0 top-0 bottom-0 pointer-events-none"></div>
+            <!-- Seek hint text -->
+            <div class="absolute inset-0 flex items-center justify-center text-xs font-bold text-blue-800 opacity-0 group-hover:opacity-50 pointer-events-none transition-opacity">
+                Klicka för att spola
+            </div>
         </div>
         
         <div class="flex justify-center items-center gap-8">
@@ -101,25 +168,24 @@
                 <svg id="pause-icon" xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" viewBox="0 0 256 256"><path d="M216,48V208a16,16,0,0,1-16,16H160a16,16,0,0,1-16-16V48a16,16,0,0,1,16-16h40A16,16,0,0,1,216,48ZM112,32H72A16,16,0,0,0,56,48V208a16,16,0,0,0,16,16h40a16,16,0,0,0,16-16V48A16,16,0,0,0,112,32Z"></path></svg>
                 <svg id="play-icon" class="hidden" xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" viewBox="0 0 256 256"><path d="M240,128a15.74,15.74,0,0,1-7.6,13.51L88.32,229.75a16,16,0,0,1-16.2.3,15.86,15.86,0,0,1-8.12-13.81V40a15.89,15.89,0,0,1,8.12-13.81,15.88,15.88,0,0,1,16.03.12l144.08,87.94A15.75,15.75,0,0,1,240,128Z"></path></svg>
             </button>
-            <div class="text-slate-400 text-sm font-medium text-center">Tryck på skärmen eller mellanslag för nästa</div>
         </div>
     </div>
 
     <script>
-        // Language configurations ensuring correct letters for each language
+        // Language configurations ensuring correct letters and flags for each language
         const appLanguages = {
-            sv: { letters: "ABCDEFGHIJKLMNOPQRSTUVWXYZÅÄÖ".split(""), numbers: "0123456789".split("") },
-            en: { letters: "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split(""), numbers: "0123456789".split("") },
-            es: { letters: "ABCDEFGHIJKLMNOPQRSTUVWXYZÑ".split(""), numbers: "0123456789".split("") },
-            de: { letters: "ABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÜ".split(""), numbers: "0123456789".split("") },
-            fr: { letters: "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split(""), numbers: "0123456789".split("") },
-            it: { letters: "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split(""), numbers: "0123456789".split("") },
-            pt: { letters: "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split(""), numbers: "0123456789".split("") },
-            nl: { letters: "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split(""), numbers: "0123456789".split("") },
-            pl: { letters: "ABCDEFGHIJKLMNOPQRSTUVWXYZĄĆĘŁŃÓŚŹŻ".split(""), numbers: "0123456789".split("") },
-            da: { letters: "ABCDEFGHIJKLMNOPQRSTUVWXYZÆØÅ".split(""), numbers: "0123456789".split("") },
-            no: { letters: "ABCDEFGHIJKLMNOPQRSTUVWXYZÆØÅ".split(""), numbers: "0123456789".split("") },
-            fi: { letters: "ABCDEFGHIJKLMNOPQRSTUVWXYZÅÄÖ".split(""), numbers: "0123456789".split("") }
+            sv: { flag: "🇸🇪", letters: "ABCDEFGHIJKLMNOPQRSTUVWXYZÅÄÖ".split(""), numbers: "0123456789".split("") },
+            en: { flag: "🇬🇧", letters: "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split(""), numbers: "0123456789".split("") },
+            es: { flag: "🇪🇸", letters: "ABCDEFGHIJKLMNOPQRSTUVWXYZÑ".split(""), numbers: "0123456789".split("") },
+            de: { flag: "🇩🇪", letters: "ABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÜ".split(""), numbers: "0123456789".split("") },
+            fr: { flag: "🇫🇷", letters: "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split(""), numbers: "0123456789".split("") },
+            it: { flag: "🇮🇹", letters: "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split(""), numbers: "0123456789".split("") },
+            pt: { flag: "🇵🇹", letters: "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split(""), numbers: "0123456789".split("") },
+            nl: { flag: "🇳🇱", letters: "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split(""), numbers: "0123456789".split("") },
+            pl: { flag: "🇵🇱", letters: "ABCDEFGHIJKLMNOPQRSTUVWXYZĄĆĘŁŃÓŚŹŻ".split(""), numbers: "0123456789".split("") },
+            da: { flag: "🇩🇰", letters: "ABCDEFGHIJKLMNOPQRSTUVWXYZÆØÅ".split(""), numbers: "0123456789".split("") },
+            no: { flag: "🇳🇴", letters: "ABCDEFGHIJKLMNOPQRSTUVWXYZÆØÅ".split(""), numbers: "0123456789".split("") },
+            fi: { flag: "🇫🇮", letters: "ABCDEFGHIJKLMNOPQRSTUVWXYZÅÄÖ".split(""), numbers: "0123456789".split("") }
         };
 
         // App State
@@ -129,11 +195,13 @@
         let isPaused = false;
         let hasStarted = false;
         
-        // Timer State
-        const TOTAL_TIME = 15000; // 15 seconds
-        let timeLeft = TOTAL_TIME;
+        // Time & Sync State
+        let totalTime = 15000; // Default 15 seconds
+        const AUDIO_DELAY = 2000; // 2 seconds silence before speaking
+        let elapsedTime = 0; // Counts UP from 0 to totalTime
         let lastTimestamp = 0;
         let timerAnimationFrame = null;
+        let audioStarted = false;
         
         // Audio State
         let currentAudio = null;
@@ -141,41 +209,43 @@
         // DOM Elements
         const charElement = document.getElementById('char-element');
         const timerBar = document.getElementById('timer-bar');
+        const progressContainer = document.getElementById('progress-container');
         const modeLettersBtn = document.getElementById('mode-letters');
         const modeNumbersBtn = document.getElementById('mode-numbers');
         const playPauseBtn = document.getElementById('play-pause');
         const playIcon = document.getElementById('play-icon');
         const pauseIcon = document.getElementById('pause-icon');
-        const mainDisplay = document.getElementById('main-display');
         const startOverlay = document.getElementById('start-overlay');
         const startBtn = document.getElementById('start-btn');
         const languageSelect = document.getElementById('app-language');
+        const durationSelect = document.getElementById('duration-select');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        
+        // Top Icons
+        const currentFlag = document.getElementById('current-flag');
+        const settingsBtn = document.getElementById('settings-btn');
+        
+        // Settings Elements
+        const settingsModal = document.getElementById('settings-modal');
+        const closeSettingsBtn = document.getElementById('close-settings-btn');
+        const settingsContent = document.getElementById('settings-content');
 
-        // Play local offline audio files
-        async function speak(expectedChar) {
-            if (!hasStarted) return;
-
-            // Stop any currently playing audio
+        // Pre-load audio reference without playing
+        function setupAudio(expectedChar) {
             if (currentAudio) {
                 currentAudio.pause();
                 currentAudio = null;
             }
-
             try {
-                // Point directly to the local folder structure
                 const audioPath = `audio/${currentLang}/${expectedChar}.mp3`;
                 currentAudio = new Audio(audioPath);
-                
-                // If not paused, start playing
-                if (!isPaused) {
-                    await currentAudio.play();
-                }
             } catch (error) {
-                console.error(`Could not play audio for ${expectedChar} in ${currentLang}. Ensure the file exists at audio/${currentLang}/${expectedChar}.mp3`, error);
+                console.error(`Could not load audio for ${expectedChar}`, error);
             }
         }
 
-        // Timer Logic
+        // Timer Logic (handles both UI progress and syncing delayed audio)
         function updateTimer(timestamp) {
             if (!hasStarted || isPaused) {
                 lastTimestamp = 0;
@@ -186,13 +256,20 @@
             const delta = timestamp - lastTimestamp;
             lastTimestamp = timestamp;
 
-            timeLeft -= delta;
+            elapsedTime += delta;
             
+            // Check if it's time to start the audio (after 2 seconds)
+            if (elapsedTime >= AUDIO_DELAY && !audioStarted && currentAudio) {
+                audioStarted = true;
+                currentAudio.play().catch(e => console.error("Audio playback prevented:", e));
+            }
+
             // Update UI progress bar
-            const progress = ((TOTAL_TIME - timeLeft) / TOTAL_TIME) * 100;
+            const progress = (elapsedTime / totalTime) * 100;
             timerBar.style.width = Math.min(100, Math.max(0, progress)) + '%';
 
-            if (timeLeft <= 0) {
+            // Auto-advance
+            if (elapsedTime >= totalTime) {
                 nextChar();
             } else {
                 timerAnimationFrame = requestAnimationFrame(updateTimer);
@@ -205,16 +282,16 @@
             timerAnimationFrame = requestAnimationFrame(updateTimer);
         }
 
-        function updateDisplay(isNewChar = true) {
+        function updateDisplay() {
             const list = currentMode === 'letters' ? appLanguages[currentLang].letters : appLanguages[currentLang].numbers;
             const char = list[currentIndex];
             charElement.innerText = char;
             
-            if (isNewChar) {
-                timeLeft = TOTAL_TIME;
-                speak(char);
-            }
-
+            // Reset elapsed time and audio flag for new character
+            elapsedTime = 0;
+            audioStarted = false;
+            
+            setupAudio(char);
             startTimerLogic();
         }
 
@@ -222,7 +299,15 @@
             if (!hasStarted) return;
             const list = currentMode === 'letters' ? appLanguages[currentLang].letters : appLanguages[currentLang].numbers;
             currentIndex = (currentIndex + 1) % list.length;
-            updateDisplay(true);
+            updateDisplay();
+        }
+
+        function prevChar() {
+            if (!hasStarted) return;
+            const list = currentMode === 'letters' ? appLanguages[currentLang].letters : appLanguages[currentLang].numbers;
+            // Add list.length before modulo to handle negative indices
+            currentIndex = (currentIndex - 1 + list.length) % list.length;
+            updateDisplay();
         }
 
         function toggleMode(mode) {
@@ -230,40 +315,45 @@
             currentMode = mode;
             currentIndex = 0;
             
-            // Update UI buttons
+            // Update UI buttons inside settings
             [modeLettersBtn, modeNumbersBtn].forEach(btn => {
                 btn.classList.remove('active-mode');
-                btn.classList.add('text-blue-500', 'bg-white');
+                btn.classList.add('text-slate-500', 'hover:text-slate-700');
             });
             
             const activeBtn = mode === 'letters' ? modeLettersBtn : modeNumbersBtn;
             activeBtn.classList.add('active-mode');
-            activeBtn.classList.remove('text-blue-500', 'bg-white');
+            activeBtn.classList.remove('text-slate-500', 'hover:text-slate-700');
             
-            updateDisplay(true);
+            updateDisplay();
         }
 
         function toggleLanguage(lang) {
             currentLang = lang;
-            currentIndex = 0; // Reset to A or 0 when changing language
-            updateDisplay(true);
+            currentIndex = 0; 
+            
+            // Update the visual flag on the main screen
+            currentFlag.innerText = appLanguages[lang].flag;
+            
+            // Add a quick animation to highlight the change
+            currentFlag.classList.add('scale-125');
+            setTimeout(() => currentFlag.classList.remove('scale-125'), 300);
+
+            updateDisplay();
         }
 
         function togglePause() {
             isPaused = !isPaused;
             if (isPaused) {
-                // Stop timer and audio, but remember positions
                 cancelAnimationFrame(timerAnimationFrame);
                 if (currentAudio) currentAudio.pause();
                 
                 playIcon.classList.remove('hidden');
                 pauseIcon.classList.add('hidden');
             } else {
-                // Resume audio and timer
-                if (currentAudio) {
+                // Resume audio ONLY if we are past the initial delay
+                if (currentAudio && audioStarted) {
                     currentAudio.play().catch(e => console.error("Play prevented", e));
-                } else {
-                    updateDisplay(false); 
                 }
                 
                 startTimerLogic();
@@ -272,11 +362,74 @@
             }
         }
 
+        // Settings Modal Logic
+        function openSettings() {
+            settingsModal.classList.remove('hidden');
+            // Small delay to allow display:block to apply before animating opacity
+            requestAnimationFrame(() => {
+                settingsModal.classList.remove('opacity-0');
+                settingsContent.classList.remove('scale-95');
+                settingsContent.classList.add('scale-100');
+            });
+            
+            // Auto-pause when opening settings so they don't miss anything
+            if (hasStarted && !isPaused) {
+                togglePause();
+            }
+        }
+
+        function closeSettings() {
+            settingsModal.classList.add('opacity-0');
+            settingsContent.classList.remove('scale-100');
+            settingsContent.classList.add('scale-95');
+            
+            // Wait for transition to finish before hiding
+            setTimeout(() => {
+                settingsModal.classList.add('hidden');
+            }, 300);
+        }
+
+        // Seeking functionality for the progress bar
+        progressContainer.addEventListener('click', (e) => {
+            if (!hasStarted) return;
+            
+            const rect = progressContainer.getBoundingClientRect();
+            const clickX = e.clientX - rect.left;
+            let percentage = clickX / rect.width;
+            percentage = Math.max(0, Math.min(1, percentage));
+            
+            elapsedTime = percentage * totalTime;
+            timerBar.style.width = (percentage * 100) + '%';
+            
+            if (currentAudio) {
+                if (elapsedTime < AUDIO_DELAY) {
+                    currentAudio.pause();
+                    currentAudio.currentTime = 0;
+                    audioStarted = false;
+                } else {
+                    audioStarted = true;
+                    if (currentAudio.readyState >= 1) {
+                        currentAudio.currentTime = (elapsedTime - AUDIO_DELAY) / 1000;
+                    }
+                    if (!isPaused) {
+                        currentAudio.play().catch(e => console.error("Play prevented during seek", e));
+                    }
+                }
+            }
+        });
+
         // Event Listeners
         startBtn.addEventListener('click', () => {
             hasStarted = true;
             startOverlay.style.display = 'none';
-            updateDisplay(true);
+            updateDisplay();
+        });
+
+        settingsBtn.addEventListener('click', openSettings);
+        closeSettingsBtn.addEventListener('click', closeSettings);
+        settingsModal.addEventListener('click', (e) => {
+            // Close if clicking on the dark backdrop outside the white modal
+            if (e.target === settingsModal) closeSettings();
         });
 
         modeLettersBtn.addEventListener('click', (e) => {
@@ -293,19 +446,39 @@
             toggleLanguage(e.target.value);
         });
 
+        durationSelect.addEventListener('change', (e) => {
+            totalTime = parseInt(e.target.value, 10) * 1000;
+        });
+
+        prevBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            prevChar();
+        });
+
+        nextBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            nextChar();
+        });
+
         playPauseBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             togglePause();
         });
-
-        mainDisplay.addEventListener('click', () => {
-            if (!isPaused) nextChar();
-        });
         
+        // Keyboard Support
         window.addEventListener('keydown', (e) => {
+            // Don't trigger keyboard shortcuts if settings are open
+            if (!settingsModal.classList.contains('hidden')) return;
+
             if (e.code === 'Space') {
                 e.preventDefault();
-                if (!isPaused) nextChar();
+                togglePause(); 
+            } else if (e.code === 'ArrowRight') {
+                e.preventDefault();
+                nextChar();
+            } else if (e.code === 'ArrowLeft') {
+                e.preventDefault();
+                prevChar();
             }
         });
     </script>
