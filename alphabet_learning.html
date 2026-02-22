@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bokstäver & Siffror</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@600;800&display=swap');
+        
+        body {
+            font-family: 'Outfit', sans-serif;
+            touch-action: manipulation;
+            overflow: hidden;
+        }
+
+        .letter-display {
+            font-size: 40vh;
+            line-height: 1;
+        }
+
+        /* Control progress entirely via JS for smooth pausing */
+        .progress-bar {
+            width: 0%;
+            height: 100%;
+            background-color: #3b82f6;
+        }
+
+        .active-mode {
+            background-color: #3b82f6;
+            color: white;
+        }
+
+        #start-overlay {
+            position: fixed;
+            inset: 0;
+            background-color: #3b82f6;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+            color: white;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 h-screen flex flex-col items-center justify-between p-8 select-none">
+
+    <!-- Start screen -->
+    <div id="start-overlay">
+        <h1 class="text-4xl font-bold mb-8 text-center px-4">Redo att träna bokstäver?</h1>
+        <button id="start-btn" class="bg-white text-blue-600 px-12 py-6 rounded-full text-3xl font-black shadow-2xl hover:scale-110 transition-transform active:scale-95">
+            STARTA
+        </button>
+    </div>
+
+    <!-- Top menu -->
+    <div class="w-full max-w-3xl flex flex-col sm:flex-row gap-4 z-10 items-center">
+        <!-- Alphabet / Numbers Toggle -->
+        <div class="flex w-full sm:w-2/3 gap-4">
+            <button id="mode-letters" class="flex-1 py-4 rounded-2xl text-xl font-bold border-4 border-blue-500 active-mode shadow-lg transition-all">
+                ABC
+            </button>
+            <button id="mode-numbers" class="flex-1 py-4 rounded-2xl text-xl font-bold border-4 border-blue-500 text-blue-500 bg-white shadow-lg transition-all">
+                123
+            </button>
+        </div>
+        
+        <!-- Language Selector -->
+        <select id="app-language" class="w-full sm:w-1/3 py-4 px-4 rounded-2xl text-xl font-bold border-4 border-slate-200 bg-white text-slate-700 outline-none cursor-pointer shadow-lg hover:border-blue-300 transition-colors">
+            <option value="sv">Svenska</option>
+            <option value="en">English</option>
+            <option value="es">Español</option>
+            <option value="de">Deutsch</option>
+            <option value="fr">Français</option>
+            <option value="it">Italiano</option>
+            <option value="pt">Português</option>
+            <option value="nl">Nederlands</option>
+            <option value="pl">Polski</option>
+            <option value="da">Dansk</option>
+            <option value="no">Norsk</option>
+            <option value="fi">Suomi</option>
+        </select>
+    </div>
+
+    <!-- Main area for letter/number -->
+    <div id="main-display" class="flex-1 flex items-center justify-center w-full cursor-pointer group">
+        <div id="char-element" class="letter-display text-blue-600 drop-shadow-2xl transform group-active:scale-95 transition-transform text-center">
+            A
+        </div>
+    </div>
+
+    <!-- Bottom controls and status -->
+    <div class="w-full max-w-2xl space-y-6">
+        <div class="w-full bg-blue-100 h-4 rounded-full overflow-hidden">
+            <div id="timer-bar" class="progress-bar"></div>
+        </div>
+        
+        <div class="flex justify-center items-center gap-8">
+            <button id="play-pause" class="bg-white p-4 rounded-full shadow-md border-2 border-slate-200 hover:bg-slate-50 transition-colors">
+                <svg id="pause-icon" xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" viewBox="0 0 256 256"><path d="M216,48V208a16,16,0,0,1-16,16H160a16,16,0,0,1-16-16V48a16,16,0,0,1,16-16h40A16,16,0,0,1,216,48ZM112,32H72A16,16,0,0,0,56,48V208a16,16,0,0,0,16,16h40a16,16,0,0,0,16-16V48A16,16,0,0,0,112,32Z"></path></svg>
+                <svg id="play-icon" class="hidden" xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" viewBox="0 0 256 256"><path d="M240,128a15.74,15.74,0,0,1-7.6,13.51L88.32,229.75a16,16,0,0,1-16.2.3,15.86,15.86,0,0,1-8.12-13.81V40a15.89,15.89,0,0,1,8.12-13.81,15.88,15.88,0,0,1,16.03.12l144.08,87.94A15.75,15.75,0,0,1,240,128Z"></path></svg>
+            </button>
+            <div class="text-slate-400 text-sm font-medium text-center">Tryck på skärmen eller mellanslag för nästa</div>
+        </div>
+    </div>
+
+    <script>
+        // Language configurations ensuring correct letters for each language
+        const appLanguages = {
+            sv: { letters: "ABCDEFGHIJKLMNOPQRSTUVWXYZÅÄÖ".split(""), numbers: "0123456789".split("") },
+            en: { letters: "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split(""), numbers: "0123456789".split("") },
+            es: { letters: "ABCDEFGHIJKLMNOPQRSTUVWXYZÑ".split(""), numbers: "0123456789".split("") },
+            de: { letters: "ABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÜ".split(""), numbers: "0123456789".split("") },
+            fr: { letters: "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split(""), numbers: "0123456789".split("") },
+            it: { letters: "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split(""), numbers: "0123456789".split("") },
+            pt: { letters: "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split(""), numbers: "0123456789".split("") },
+            nl: { letters: "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split(""), numbers: "0123456789".split("") },
+            pl: { letters: "ABCDEFGHIJKLMNOPQRSTUVWXYZĄĆĘŁŃÓŚŹŻ".split(""), numbers: "0123456789".split("") },
+            da: { letters: "ABCDEFGHIJKLMNOPQRSTUVWXYZÆØÅ".split(""), numbers: "0123456789".split("") },
+            no: { letters: "ABCDEFGHIJKLMNOPQRSTUVWXYZÆØÅ".split(""), numbers: "0123456789".split("") },
+            fi: { letters: "ABCDEFGHIJKLMNOPQRSTUVWXYZÅÄÖ".split(""), numbers: "0123456789".split("") }
+        };
+
+        // App State
+        let currentLang = 'sv';
+        let currentMode = 'letters';
+        let currentIndex = 0;
+        let isPaused = false;
+        let hasStarted = false;
+        
+        // Timer State
+        const TOTAL_TIME = 15000; // 15 seconds
+        let timeLeft = TOTAL_TIME;
+        let lastTimestamp = 0;
+        let timerAnimationFrame = null;
+        
+        // Audio State
+        let currentAudio = null;
+
+        // DOM Elements
+        const charElement = document.getElementById('char-element');
+        const timerBar = document.getElementById('timer-bar');
+        const modeLettersBtn = document.getElementById('mode-letters');
+        const modeNumbersBtn = document.getElementById('mode-numbers');
+        const playPauseBtn = document.getElementById('play-pause');
+        const playIcon = document.getElementById('play-icon');
+        const pauseIcon = document.getElementById('pause-icon');
+        const mainDisplay = document.getElementById('main-display');
+        const startOverlay = document.getElementById('start-overlay');
+        const startBtn = document.getElementById('start-btn');
+        const languageSelect = document.getElementById('app-language');
+
+        // Play local offline audio files
+        async function speak(expectedChar) {
+            if (!hasStarted) return;
+
+            // Stop any currently playing audio
+            if (currentAudio) {
+                currentAudio.pause();
+                currentAudio = null;
+            }
+
+            try {
+                // Point directly to the local folder structure
+                const audioPath = `audio/${currentLang}/${expectedChar}.mp3`;
+                currentAudio = new Audio(audioPath);
+                
+                // If not paused, start playing
+                if (!isPaused) {
+                    await currentAudio.play();
+                }
+            } catch (error) {
+                console.error(`Could not play audio for ${expectedChar} in ${currentLang}. Ensure the file exists at audio/${currentLang}/${expectedChar}.mp3`, error);
+            }
+        }
+
+        // Timer Logic
+        function updateTimer(timestamp) {
+            if (!hasStarted || isPaused) {
+                lastTimestamp = 0;
+                return;
+            }
+
+            if (!lastTimestamp) lastTimestamp = timestamp;
+            const delta = timestamp - lastTimestamp;
+            lastTimestamp = timestamp;
+
+            timeLeft -= delta;
+            
+            // Update UI progress bar
+            const progress = ((TOTAL_TIME - timeLeft) / TOTAL_TIME) * 100;
+            timerBar.style.width = Math.min(100, Math.max(0, progress)) + '%';
+
+            if (timeLeft <= 0) {
+                nextChar();
+            } else {
+                timerAnimationFrame = requestAnimationFrame(updateTimer);
+            }
+        }
+
+        function startTimerLogic() {
+            cancelAnimationFrame(timerAnimationFrame);
+            lastTimestamp = 0;
+            timerAnimationFrame = requestAnimationFrame(updateTimer);
+        }
+
+        function updateDisplay(isNewChar = true) {
+            const list = currentMode === 'letters' ? appLanguages[currentLang].letters : appLanguages[currentLang].numbers;
+            const char = list[currentIndex];
+            charElement.innerText = char;
+            
+            if (isNewChar) {
+                timeLeft = TOTAL_TIME;
+                speak(char);
+            }
+
+            startTimerLogic();
+        }
+
+        function nextChar() {
+            if (!hasStarted) return;
+            const list = currentMode === 'letters' ? appLanguages[currentLang].letters : appLanguages[currentLang].numbers;
+            currentIndex = (currentIndex + 1) % list.length;
+            updateDisplay(true);
+        }
+
+        function toggleMode(mode) {
+            if (currentMode === mode) return;
+            currentMode = mode;
+            currentIndex = 0;
+            
+            // Update UI buttons
+            [modeLettersBtn, modeNumbersBtn].forEach(btn => {
+                btn.classList.remove('active-mode');
+                btn.classList.add('text-blue-500', 'bg-white');
+            });
+            
+            const activeBtn = mode === 'letters' ? modeLettersBtn : modeNumbersBtn;
+            activeBtn.classList.add('active-mode');
+            activeBtn.classList.remove('text-blue-500', 'bg-white');
+            
+            updateDisplay(true);
+        }
+
+        function toggleLanguage(lang) {
+            currentLang = lang;
+            currentIndex = 0; // Reset to A or 0 when changing language
+            updateDisplay(true);
+        }
+
+        function togglePause() {
+            isPaused = !isPaused;
+            if (isPaused) {
+                // Stop timer and audio, but remember positions
+                cancelAnimationFrame(timerAnimationFrame);
+                if (currentAudio) currentAudio.pause();
+                
+                playIcon.classList.remove('hidden');
+                pauseIcon.classList.add('hidden');
+            } else {
+                // Resume audio and timer
+                if (currentAudio) {
+                    currentAudio.play().catch(e => console.error("Play prevented", e));
+                } else {
+                    updateDisplay(false); 
+                }
+                
+                startTimerLogic();
+                playIcon.classList.add('hidden');
+                pauseIcon.classList.remove('hidden');
+            }
+        }
+
+        // Event Listeners
+        startBtn.addEventListener('click', () => {
+            hasStarted = true;
+            startOverlay.style.display = 'none';
+            updateDisplay(true);
+        });
+
+        modeLettersBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            toggleMode('letters');
+        });
+        
+        modeNumbersBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            toggleMode('numbers');
+        });
+
+        languageSelect.addEventListener('change', (e) => {
+            toggleLanguage(e.target.value);
+        });
+
+        playPauseBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            togglePause();
+        });
+
+        mainDisplay.addEventListener('click', () => {
+            if (!isPaused) nextChar();
+        });
+        
+        window.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                if (!isPaused) nextChar();
+            }
+        });
+    </script>
+</body>
+</html>
