@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Alphabet Learning</string>
+    <string name="title_activity_main">Alphabet Learning</string>
+    <string name="package_name">se.jorenbo.alphabet</string>
+    <string name="custom_url_scheme">se.jorenbo.alphabet</string>
+</resources>
