@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bokstäver & Siffror</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="style.css" rel="stylesheet">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@600;800&display=swap');
         
@@ -204,7 +204,7 @@
         let audioStarted = false;
         
         // Audio State
-        let currentAudio = null;
+        const currentAudio = new Audio(); // Create ONE reusable audio player
 
         // DOM Elements
         const charElement = document.getElementById('char-element');
@@ -233,13 +233,10 @@
 
         // Pre-load audio reference without playing
         function setupAudio(expectedChar) {
-            if (currentAudio) {
-                currentAudio.pause();
-                currentAudio = null;
-            }
+            currentAudio.pause(); 
             try {
-                const audioPath = `audio/${currentLang}/${expectedChar}.mp3`;
-                currentAudio = new Audio(audioPath);
+                currentAudio.src = `audio/${currentLang}/${expectedChar}.mp3`;
+                currentAudio.load(); // Force the browser to prep the new file
             } catch (error) {
                 console.error(`Could not load audio for ${expectedChar}`, error);
             }
@@ -419,7 +416,14 @@
         });
 
         // Event Listeners
-        startBtn.addEventListener('click', () => {
+        startBtn.addEventListener('click', (e) => {
+            e.preventDefault(); // Stop mobile double-click glitches
+
+            currentAudio.src = 'data:audio/mp3;base64,//OExAAAAANIAAAAAExBTUUzLjEwMKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq';
+            currentAudio.play().then(() => {
+                currentAudio.pause(); 
+            }).catch(err => console.log("Unlock check:", err));
+
             hasStarted = true;
             startOverlay.style.display = 'none';
             updateDisplay();
