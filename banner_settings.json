@@ -1,0 +1,14 @@
+{
+  "bgTop": "#e0f2fe",
+  "bgBottom": "#bae6fd",
+  "mainText": "ABC & 123",
+  "mainColor": "#3038a8",
+  "mainSize": "159",
+  "mainY": "240",
+  "edgeColor": "#ffffff",
+  "edgeSize": "11",
+  "subText": "för barn",
+  "badgeColor": "#d99a22",
+  "subY": "108",
+  "decOpacity": "0.3"
+}

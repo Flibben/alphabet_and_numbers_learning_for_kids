@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Interactive Banner Studio PRO</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@800&display=swap" rel="stylesheet">
+  <style>
+    body { 
+      margin: 0; padding: 0; background: #1a1a1a; color: #fff; 
+      font-family: system-ui, sans-serif; display: flex; height: 100vh; overflow: hidden;
+    }
+    .sidebar {
+      width: 350px; background: #2a2a2a; padding: 20px; overflow-y: auto;
+      box-shadow: 2px 0 10px rgba(0,0,0,0.5); z-index: 10;
+    }
+    .main-area {
+      flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 20px; background: #111;
+    }
+    canvas {
+      box-shadow: 0 20px 50px rgba(0,0,0,0.7); border-radius: 8px; 
+      width: 100%; max-width: 1024px; background: white;
+    }
+    h2, h3 { margin-top: 0; color: #10b981; }
+    h3 { font-size: 14px; text-transform: uppercase; letter-spacing: 1px; margin-top: 20px; border-bottom: 1px solid #444; padding-bottom: 5px; color: #9ca3af;}
+    .control-group { margin-bottom: 15px; }
+    label { display: block; font-size: 13px; margin-bottom: 5px; color: #ccc; }
+    input[type="range"] { width: 100%; cursor: pointer; }
+    input[type="color"] { width: 100%; height: 35px; border: none; border-radius: 4px; cursor: pointer; background: transparent; }
+    input[type="text"] { width: 100%; padding: 8px; box-sizing: border-box; background: #333; color: white; border: 1px solid #555; border-radius: 4px; }
+    
+    .btn { display: block; width: 100%; padding: 12px; font-weight: bold; border: none; border-radius: 6px; cursor: pointer; text-align: center; transition: 0.2s;}
+    .btn-download { background: #10b981; color: white; font-size: 18px; margin-top: 25px; }
+    .btn-download:hover { background: #059669; }
+    
+    .btn-row { display: flex; gap: 10px; margin-top: 15px; }
+    
+    .btn-export { background: #3b82f6; color: white; font-size: 14px; flex: 1; }
+    .btn-export:hover { background: #2563eb; }
+    .btn-import { background: #6366f1; color: white; font-size: 14px; flex: 1; }
+    .btn-import:hover { background: #4f46e5; }
+    
+    .btn-history { background: #4b5563; color: white; font-size: 14px; flex: 1; }
+    .btn-history:hover:not(:disabled) { background: #374151; }
+    .btn-history:disabled { opacity: 0.4; cursor: not-allowed; }
+    
+    .val-display { float: right; color: #10b981; font-weight: bold; }
+  </style>
+</head>
+<body>
+
+  <div class="sidebar">
+    <h2>Banner Controls</h2>
+    
+    <div class="btn-row">
+      <button id="btnUndo" class="btn btn-history" onclick="undo()" disabled>⟲ Undo</button>
+      <button id="btnRedo" class="btn btn-history" onclick="redo()" disabled>⟳ Redo</button>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-export" onclick="exportConfig()">💾 Save</button>
+      <button class="btn btn-import" onclick="document.getElementById('importFile').click()">📂 Load</button>
+      <input type="file" id="importFile" style="display:none" accept=".json" onchange="importConfig(event)">
+    </div>
+
+    <h3>Background Gradient</h3>
+    <div class="control-group">
+      <label>Top Color</label>
+      <input type="color" id="bgTop" value="#e0f2fe">
+    </div>
+    <div class="control-group">
+      <label>Bottom Color</label>
+      <input type="color" id="bgBottom" value="#bae6fd">
+    </div>
+
+    <h3>Main Title</h3>
+    <div class="control-group">
+      <label>Text</label>
+      <input type="text" id="mainText" value="ABC & 123">
+    </div>
+    <div class="control-group">
+      <label>Text Color</label>
+      <input type="color" id="mainColor" value="#3038a8">
+    </div>
+    <div class="control-group">
+      <label>Font Size <span class="val-display" id="valMainSize">159</span></label>
+      <input type="range" id="mainSize" min="80" max="220" value="159">
+    </div>
+    <div class="control-group">
+      <label>Vertical Position <span class="val-display" id="valMainY">240</span></label>
+      <input type="range" id="mainY" min="100" max="400" value="240">
+    </div>
+
+    <h3>Sticker Edge (Border)</h3>
+    <div class="control-group">
+      <label>Edge Color</label>
+      <input type="color" id="edgeColor" value="#ffffff">
+    </div>
+    <div class="control-group">
+      <label>Edge Size <span class="val-display" id="valEdgeSize">11</span></label>
+      <input type="range" id="edgeSize" min="0" max="80" value="11">
+    </div>
+
+    <h3>Subtitle Badge</h3>
+    <div class="control-group">
+      <label>Text</label>
+      <input type="text" id="subText" value="för barn">
+    </div>
+    <div class="control-group">
+      <label>Badge Color</label>
+      <input type="color" id="badgeColor" value="#d99a22">
+    </div>
+    <div class="control-group">
+      <label>Vertical Offset <span class="val-display" id="valSubY">108</span></label>
+      <input type="range" id="subY" min="40" max="180" value="108">
+    </div>
+
+    <h3>Decorations</h3>
+    <div class="control-group">
+      <label>Decoration Opacity <span class="val-display" id="valDecOpacity">0.3</span></label>
+      <input type="range" id="decOpacity" min="0" max="1" step="0.1" value="0.3">
+    </div>
+
+    <button class="btn btn-download" onclick="downloadBanner()">⬇ Download PNG</button>
+  </div>
+
+  <div class="main-area">
+    <canvas id="banner" width="1024" height="500"></canvas>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('banner');
+    const ctx = canvas.getContext('2d');
+
+    // --- HISTORY SYSTEM ---
+    let historyStack = [];
+    let historyIndex = -1;
+    let isApplyingHistory = false;
+
+    function saveState() {
+      if (isApplyingHistory) return; // Don't save a state while an undo is running
+      
+      const config = buildConfigObject();
+      const configString = JSON.stringify(config);
+      
+      // Prevent saving if nothing actually changed
+      if (historyIndex >= 0 && configString === JSON.stringify(historyStack[historyIndex])) return;
+      
+      // If we undo'd and then made a new change, snip off the "future" history
+      historyStack = historyStack.slice(0, historyIndex + 1);
+      
+      historyStack.push(config);
+      historyIndex++;
+      updateHistoryButtons();
+    }
+
+    function undo() {
+      if (historyIndex > 0) {
+        historyIndex--;
+        isApplyingHistory = true;
+        applyConfigObject(historyStack[historyIndex]);
+        isApplyingHistory = false;
+        updateHistoryButtons();
+      }
+    }
+
+    function redo() {
+      if (historyIndex < historyStack.length - 1) {
+        historyIndex++;
+        isApplyingHistory = true;
+        applyConfigObject(historyStack[historyIndex]);
+        isApplyingHistory = false;
+        updateHistoryButtons();
+      }
+    }
+
+    function updateHistoryButtons() {
+      document.getElementById('btnUndo').disabled = historyIndex <= 0;
+      document.getElementById('btnRedo').disabled = historyIndex >= historyStack.length - 1;
+    }
+
+    // --- INPUT HANDLING ---
+    const inputs = document.querySelectorAll('input');
+    inputs.forEach(input => {
+      // Fires constantly while sliding
+      input.addEventListener('input', (e) => {
+        if(e.target.type === 'range') {
+          const display = document.getElementById('val' + e.target.id.charAt(0).toUpperCase() + e.target.id.slice(1));
+          if(display) display.innerText = e.target.value;
+        }
+        draw(); 
+        saveToLocalStorage();
+      });
+
+      // Fires only when you release the slider or finish typing
+      input.addEventListener('change', (e) => {
+        saveState();
+      });
+    });
+
+    // --- JSON & STORAGE LOGIC ---
+    function buildConfigObject() {
+      const config = {};
+      inputs.forEach(input => {
+        if(input.id && input.id !== 'importFile') {
+          config[input.id] = input.value;
+        }
+      });
+      return config;
+    }
+
+    function applyConfigObject(config) {
+      for (const key in config) {
+        const el = document.getElementById(key);
+        if (el) {
+          el.value = config[key];
+          if(el.type === 'range') {
+            const display = document.getElementById('val' + key.charAt(0).toUpperCase() + key.slice(1));
+            if(display) display.innerText = config[key];
+          }
+        }
+      }
+      draw();
+      saveToLocalStorage();
+    }
+
+    function saveToLocalStorage() {
+      localStorage.setItem('bannerStudioConfig', JSON.stringify(buildConfigObject()));
+    }
+
+    function loadFromLocalStorage() {
+      const saved = localStorage.getItem('bannerStudioConfig');
+      if (saved) {
+        applyConfigObject(JSON.parse(saved));
+      }
+    }
+
+    function exportConfig() {
+      const configStr = JSON.stringify(buildConfigObject(), null, 2);
+      const blob = new Blob([configStr], { type: "application/json" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "banner_settings.json";
+      link.click();
+    }
+
+    function importConfig(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const config = JSON.parse(e.target.result);
+          applyConfigObject(config);
+          
+          // Clear history and set new base state on import
+          historyStack = [];
+          historyIndex = -1;
+          saveState();
+          
+          alert("Settings loaded successfully!");
+        } catch(err) {
+          alert("Error loading settings file.");
+        }
+      };
+      reader.readAsText(file);
+      event.target.value = '';
+    }
+
+    // --- THE DRAWING ENGINE ---
+    function draw() {
+      const bgTop = document.getElementById('bgTop').value;
+      const bgBottom = document.getElementById('bgBottom').value;
+      const mainText = document.getElementById('mainText').value;
+      const mainColor = document.getElementById('mainColor').value;
+      const mainSize = parseInt(document.getElementById('mainSize').value);
+      const mainY = parseInt(document.getElementById('mainY').value);
+      const edgeColor = document.getElementById('edgeColor').value;
+      const edgeSize = parseInt(document.getElementById('edgeSize').value);
+      const subText = document.getElementById('subText').value;
+      const badgeColor = document.getElementById('badgeColor').value;
+      const subYOffset = parseInt(document.getElementById('subY').value);
+      const decOpacity = parseFloat(document.getElementById('decOpacity').value);
+
+      ctx.clearRect(0, 0, 1024, 500);
+
+      const gradient = ctx.createLinearGradient(0, 0, 1024, 500);
+      gradient.addColorStop(0, bgTop);
+      gradient.addColorStop(1, bgBottom);
+      ctx.fillStyle = gradient; 
+      ctx.fillRect(0, 0, 1024, 500);
+
+      const drawBubble = (x, y, r, color) => {
+        ctx.beginPath(); ctx.arc(x, y, r, 0, 2 * Math.PI);
+        ctx.fillStyle = color; ctx.globalAlpha = decOpacity; ctx.fill(); ctx.globalAlpha = 1.0; 
+      };
+      drawBubble(100, 100, 120, '#fde047');
+      drawBubble(900, 400, 150, '#f9a8d4');
+      drawBubble(850, 80, 80, '#86efac');
+      drawBubble(150, 400, 100, '#c4b5fd');
+
+      const drawFloatingText = (text, x, y, size, color, angle) => {
+        ctx.save(); ctx.translate(x, y); ctx.rotate(angle * Math.PI / 180);
+        ctx.fillStyle = color; ctx.font = `800 ${size}px 'Outfit'`; 
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.globalAlpha = decOpacity; ctx.fillText(text, 0, 0); ctx.restore();
+      };
+      drawFloatingText('A', 250, 150, 100, '#ef4444', -15);
+      drawFloatingText('B', 800, 250, 120, '#3b82f6', 20);
+      drawFloatingText('3', 180, 300, 140, '#10b981', 10);
+      drawFloatingText('C', 700, 120, 90, '#f59e0b', -25);
+      drawFloatingText('1', 850, 350, 110, '#8b5cf6', -10);
+      drawFloatingText('2', 300, 420, 100, '#ec4899', 15);
+
+      const xCenter = 512;
+      ctx.shadowColor = 'rgba(0, 32, 96, 0.25)';
+      ctx.shadowBlur = 15; ctx.shadowOffsetX = 0; ctx.shadowOffsetY = 12;
+      ctx.font = `800 ${mainSize}px 'Outfit'`;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      
+      if (edgeSize > 0) {
+        ctx.lineWidth = edgeSize; ctx.strokeStyle = edgeColor;
+        ctx.lineJoin = 'round'; ctx.strokeText(mainText, xCenter, mainY);
+      }
+      ctx.shadowColor = 'transparent'; 
+      ctx.fillStyle = mainColor; ctx.fillText(mainText, xCenter, mainY);
+
+      if(subText.trim() !== '') {
+        ctx.font = `800 45px 'Outfit'`;
+        const textWidth = ctx.measureText(subText).width;
+        const badgeWidth = textWidth + 80; const badgeHeight = 70;
+        const badgeX = xCenter - badgeWidth / 2; const badgeY = mainY + subYOffset;
+
+        ctx.fillStyle = badgeColor; ctx.beginPath();
+        ctx.roundRect(badgeX, badgeY, badgeWidth, badgeHeight, 35); ctx.fill();
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText(subText, xCenter, badgeY + badgeHeight / 2 + 3);
+      }
+    }
+
+    // Initialize Canvas on Load
+    document.fonts.load('800 100px "Outfit"').then(function() {
+      loadFromLocalStorage();
+      draw();
+      saveState(); // Capture the very first baseline state for history!
+    });
+
+    function downloadBanner() {
+      const link = document.createElement('a');
+      link.download = 'feature_graphic_final.png';
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    }
+  </script>
+</body>
+</html>
