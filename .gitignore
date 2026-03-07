@@ -9,3 +9,30 @@ env/
 
 # Ignore node modules
 node_modules/
+npm-debug.log
+dist/
+build/
+
+# Ignore Keystore and security files
+*.jks
+*.keystore
+keystores/
+key.properties
+.env
+
+# Android Studio & Gradle files
+android/.gradle/
+android/.idea/
+android/app/build/
+android/build/
+android/local.properties
+*.iml
+
+# Build Artifacts
+*.apk
+*.aab
+*.ap_
+
+# OS Junk files
+.DS_Store
+Thumbs.db
